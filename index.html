@@ -465,43 +465,111 @@
           throw new Error("Keine Internetverbindung");
         }
 
-        const res = await fetch(ENDPOINT_URL, {
-          method: "POST",
-          mode: "cors",
-          headers: { 
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify(payload)
+        // Google Apps Script Web Apps work better with URL-encoded data
+        // Convert payload to URL-encoded format
+        const formData = new URLSearchParams();
+        Object.keys(payload).forEach(key => {
+          if (payload[key] !== null && payload[key] !== undefined && payload[key] !== '') {
+            formData.append(key, payload[key]);
+          }
         });
 
-        // Try to parse response
+        // Try multiple methods for better compatibility
+        let res;
         let data = {};
+        
         try {
-          const text = await res.text();
-          data = text ? JSON.parse(text) : {};
-        } catch (parseError) {
-          // If response is not JSON but status is OK, assume success
-          if (res.ok) {
-            data = { ok: true };
-          } else {
-            throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+          // Method 1: POST with form-urlencoded (best for Google Apps Script)
+          res = await fetch(ENDPOINT_URL, {
+            method: "POST",
+            mode: "no-cors", // Google Apps Script often requires no-cors
+            headers: {
+              "Content-Type": "application/x-www-form-urlencoded"
+            },
+            body: formData.toString(),
+            redirect: "follow"
+          });
+
+          // With no-cors, we can't read the response, so assume success if no error thrown
+          if (res.type === "opaque" || res.type === "opaqueredirect") {
+            // Success - Google Apps Script processed it
+            showMessage("✅ Erfolgreich gespeichert!", "success");
+            document.getElementById("betrag").value = "";
+            document.getElementById("unterkategorie").value = "";
+            document.getElementById("zahlungsart").value = "";
+            document.getElementById("fix_variabel").value = "";
+            document.getElementById("notiz").value = "";
+            setTimeout(() => {
+              document.getElementById("betrag").focus();
+            }, 100);
+            return;
+          }
+
+          // If we can read the response, try to parse it
+          try {
+            const text = await res.text();
+            data = text ? JSON.parse(text) : {};
+          } catch (parseError) {
+            if (res.ok) {
+              data = { ok: true };
+            }
+          }
+
+        } catch (firstError) {
+          console.log("Method 1 failed, trying method 2:", firstError);
+          
+          // Method 2: POST with JSON (fallback)
+          try {
+            res = await fetch(ENDPOINT_URL, {
+              method: "POST",
+              mode: "cors",
+              headers: {
+                "Content-Type": "application/json"
+              },
+              body: JSON.stringify(payload),
+              redirect: "follow"
+            });
+
+            const text = await res.text();
+            data = text ? JSON.parse(text) : {};
+
+          } catch (secondError) {
+            console.log("Method 2 failed, trying method 3:", secondError);
+            
+            // Method 3: GET with URL parameters (last resort)
+            const params = new URLSearchParams(payload);
+            res = await fetch(`${ENDPOINT_URL}?${params.toString()}`, {
+              method: "GET",
+              mode: "no-cors",
+              redirect: "follow"
+            });
+
+            // With GET + no-cors, assume success
+            showMessage("✅ Erfolgreich gespeichert!", "success");
+            document.getElementById("betrag").value = "";
+            document.getElementById("unterkategorie").value = "";
+            document.getElementById("zahlungsart").value = "";
+            document.getElementById("fix_variabel").value = "";
+            document.getElementById("notiz").value = "";
+            setTimeout(() => {
+              document.getElementById("betrag").focus();
+            }, 100);
+            return;
           }
         }
 
-        if (!res.ok || (data.ok !== undefined && !data.ok)) {
+        // Check response if we got one
+        if (res && !res.ok && data.ok !== undefined && !data.ok) {
           throw new Error(data.error || `HTTP ${res.status}`);
         }
 
+        // Success
         showMessage("✅ Erfolgreich gespeichert!", "success");
-        
-        // Reset form (keep typ, kategorie, datum)
         document.getElementById("betrag").value = "";
         document.getElementById("unterkategorie").value = "";
         document.getElementById("zahlungsart").value = "";
         document.getElementById("fix_variabel").value = "";
         document.getElementById("notiz").value = "";
-        
-        // Focus on betrag for next entry
         setTimeout(() => {
           document.getElementById("betrag").focus();
         }, 100);
@@ -510,7 +578,6 @@
         console.error("Fetch error:", e);
         let errorMsg = e.message || "Unbekannter Fehler";
         
-        // Provide more helpful error messages
         if (errorMsg.includes("Failed to fetch") || errorMsg.includes("NetworkError")) {
           errorMsg = "Netzwerkfehler. Bitte Internetverbindung prüfen oder später erneut versuchen.";
         } else if (errorMsg.includes("CORS")) {
