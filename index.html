@@ -403,9 +403,19 @@
       });
     });
 
-    // Register service worker
+    // Register service worker (unregister old ones first)
     if ("serviceWorker" in navigator) {
-      navigator.serviceWorker.register("sw.js").catch(() => {});
+      navigator.serviceWorker.getRegistrations().then((registrations) => {
+        registrations.forEach((registration) => {
+          registration.unregister();
+        });
+        // Register new service worker after a short delay
+        setTimeout(() => {
+          navigator.serviceWorker.register("sw.js", { updateViaCache: "none" })
+            .then(() => console.log("Service Worker registered"))
+            .catch((err) => console.log("Service Worker registration failed:", err));
+        }, 100);
+      });
     }
 
     // Form handling
@@ -450,15 +460,35 @@
       };
 
       try {
+        // Check if online
+        if (!navigator.onLine) {
+          throw new Error("Keine Internetverbindung");
+        }
+
         const res = await fetch(ENDPOINT_URL, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          mode: "cors",
+          headers: { 
+            "Content-Type": "application/json"
+          },
           body: JSON.stringify(payload)
         });
 
-        const data = await res.json().catch(() => ({}));
+        // Try to parse response
+        let data = {};
+        try {
+          const text = await res.text();
+          data = text ? JSON.parse(text) : {};
+        } catch (parseError) {
+          // If response is not JSON but status is OK, assume success
+          if (res.ok) {
+            data = { ok: true };
+          } else {
+            throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+          }
+        }
 
-        if (!res.ok || !data.ok) {
+        if (!res.ok || (data.ok !== undefined && !data.ok)) {
           throw new Error(data.error || `HTTP ${res.status}`);
         }
 
@@ -477,7 +507,17 @@
         }, 100);
 
       } catch (e) {
-        showMessage(`❌ Fehler: ${e.message}`, "error");
+        console.error("Fetch error:", e);
+        let errorMsg = e.message || "Unbekannter Fehler";
+        
+        // Provide more helpful error messages
+        if (errorMsg.includes("Failed to fetch") || errorMsg.includes("NetworkError")) {
+          errorMsg = "Netzwerkfehler. Bitte Internetverbindung prüfen oder später erneut versuchen.";
+        } else if (errorMsg.includes("CORS")) {
+          errorMsg = "CORS-Fehler. Bitte Google Apps Script Einstellungen prüfen.";
+        }
+        
+        showMessage(`❌ Fehler: ${errorMsg}`, "error");
       } finally {
         submitBtn.disabled = false;
         submitBtn.innerHTML = "💾 Speichern";
