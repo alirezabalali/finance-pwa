@@ -5,101 +5,437 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Finanz-Tracker</title>
   <link rel="manifest" href="manifest.json" />
-  <meta name="theme-color" content="#111111" />
+  <meta name="theme-color" content="#6366f1" />
   <style>
-    body { font-family: system-ui, sans-serif; margin: 20px; max-width: 520px; }
-    label { display:block; margin-top: 12px; font-weight: 600; }
-    input, select, textarea, button { width:100%; padding:12px; margin-top:6px; font-size: 16px; }
-    button { margin-top: 16px; }
-    .row { display:flex; gap:12px; }
-    .row > div { flex:1; }
-    .msg { margin-top: 12px; }
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 20px;
+      color: #1f2937;
+    }
+
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 24px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      overflow: hidden;
+    }
+
+    .header {
+      background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+      color: white;
+      padding: 32px 24px;
+      text-align: center;
+    }
+
+    .header h1 {
+      font-size: 28px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    .header p {
+      opacity: 0.9;
+      font-size: 14px;
+    }
+
+    .tabs {
+      display: flex;
+      background: #f3f4f6;
+      border-bottom: 2px solid #e5e7eb;
+    }
+
+    .tab {
+      flex: 1;
+      padding: 16px;
+      text-align: center;
+      background: transparent;
+      border: none;
+      font-size: 16px;
+      font-weight: 600;
+      color: #6b7280;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      position: relative;
+    }
+
+    .tab.active {
+      color: #6366f1;
+      background: white;
+    }
+
+    .tab.active::after {
+      content: '';
+      position: absolute;
+      bottom: -2px;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: #6366f1;
+    }
+
+    .tab-content {
+      display: none;
+      padding: 24px;
+      animation: fadeIn 0.3s ease;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 600;
+      color: #374151;
+      font-size: 14px;
+    }
+
+    input, select, textarea {
+      width: 100%;
+      padding: 14px 16px;
+      border: 2px solid #e5e7eb;
+      border-radius: 12px;
+      font-size: 16px;
+      transition: all 0.2s ease;
+      background: white;
+      font-family: inherit;
+    }
+
+    input:focus, select:focus, textarea:focus {
+      outline: none;
+      border-color: #6366f1;
+      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+    }
+
+    .row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    textarea {
+      resize: vertical;
+      min-height: 80px;
+    }
+
+    button[type="submit"] {
+      width: 100%;
+      padding: 16px;
+      background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+      color: white;
+      border: none;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+      margin-top: 8px;
+    }
+
+    button[type="submit"]:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(99, 102, 241, 0.5);
+    }
+
+    button[type="submit"]:active {
+      transform: translateY(0);
+    }
+
+    button[type="submit"]:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .msg {
+      margin-top: 16px;
+      padding: 14px 16px;
+      border-radius: 12px;
+      font-weight: 500;
+      text-align: center;
+      animation: slideIn 0.3s ease;
+    }
+
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateY(-10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .msg.success {
+      background: #d1fae5;
+      color: #065f46;
+      border: 2px solid #10b981;
+    }
+
+    .msg.error {
+      background: #fee2e2;
+      color: #991b1b;
+      border: 2px solid #ef4444;
+    }
+
+    .msg.info {
+      background: #dbeafe;
+      color: #1e40af;
+      border: 2px solid #3b82f6;
+    }
+
+    .overview-placeholder {
+      padding: 40px 24px;
+      text-align: center;
+      color: #6b7280;
+    }
+
+    .overview-placeholder svg {
+      width: 80px;
+      height: 80px;
+      margin: 0 auto 16px;
+      opacity: 0.5;
+    }
+
+    .overview-placeholder h3 {
+      font-size: 20px;
+      margin-bottom: 8px;
+      color: #374151;
+    }
+
+    .overview-placeholder p {
+      font-size: 14px;
+    }
+
+    /* Mobile optimizations */
+    @media (max-width: 640px) {
+      body {
+        padding: 12px;
+      }
+
+      .container {
+        border-radius: 20px;
+      }
+
+      .header {
+        padding: 24px 20px;
+      }
+
+      .header h1 {
+        font-size: 24px;
+      }
+
+      .tab-content {
+        padding: 20px;
+      }
+
+      .row {
+        grid-template-columns: 1fr;
+        gap: 20px;
+      }
+
+      input, select, textarea {
+        padding: 12px 14px;
+        font-size: 16px; /* Prevents zoom on iOS */
+      }
+
+      button[type="submit"] {
+        padding: 14px;
+      }
+    }
+
+    /* Loading spinner */
+    .spinner {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      border-radius: 50%;
+      border-top-color: white;
+      animation: spin 0.6s linear infinite;
+      margin-right: 8px;
+      vertical-align: middle;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
   </style>
 </head>
 <body>
-  <h2>Neue Buchung</h2>
-
-  <form id="f">
-    <label>Typ</label>
-    <select id="typ" required>
-      <option value="Ausgabe">Ausgabe</option>
-      <option value="Einnahme">Einnahme</option>
-    </select>
-
-    <label>Betrag (€)</label>
-    <input id="betrag" type="number" step="0.01" required />
-
-    <label>Kategorie</label>
-    <select id="kategorie" required>
-      <option>Wohnen</option>
-      <option>Lebensmittel & Haushalt</option>
-      <option>Essen außer Haus</option>
-      <option>Transport & Mobilität</option>
-      <option>Versicherungen</option>
-      <option>Kommunikation</option>
-      <option>Abos & Mitgliedschaften</option>
-      <option>Gesundheit</option>
-      <option>Freizeit & Unterhaltung</option>
-      <option>Bildung & Studium</option>
-      <option>Technik & Elektronik</option>
-      <option>Reisen</option>
-      <option>Sonstiges</option>
-    </select>
-
-    <div class="row">
-      <div>
-        <label>Datum</label>
-        <input id="datum" type="date" required />
-      </div>
-      <div>
-        <label>Zahlungsart</label>
-        <select id="zahlungsart">
-          <option value="">—</option>
-          <option>Karte</option>
-          <option>Bar</option>
-          <option>Überweisung</option>
-          <option>PayPal</option>
-          <option>Kreditkarte</option>
-        </select>
-      </div>
+  <div class="container">
+    <div class="header">
+      <h1>💰 Finanz-Tracker</h1>
+      <p>Verwalte deine Einnahmen und Ausgaben</p>
     </div>
 
-    <label>Unterkategorie (optional)</label>
-    <input id="unterkategorie" type="text" />
+    <div class="tabs">
+      <button class="tab active" data-tab="form">Neue Buchung</button>
+      <button class="tab" data-tab="overview">Übersicht</button>
+    </div>
 
-    <label>Fix/Variabel (optional)</label>
-    <select id="fix_variabel">
-      <option value="">—</option>
-      <option>Fixkosten</option>
-      <option>Variable Kosten</option>
-    </select>
+    <div id="form-tab" class="tab-content active">
+      <form id="f">
+        <div class="form-group">
+          <label for="typ">Typ *</label>
+          <select id="typ" required>
+            <option value="Ausgabe">📉 Ausgabe</option>
+            <option value="Einnahme">📈 Einnahme</option>
+          </select>
+        </div>
 
-    <label>Notiz (optional)</label>
-    <textarea id="notiz" rows="3"></textarea>
+        <div class="form-group">
+          <label for="betrag">Betrag (€) *</label>
+          <input id="betrag" type="number" step="0.01" min="0" required placeholder="0.00" />
+        </div>
 
-    <button type="submit">Speichern</button>
-    <div class="msg" id="msg"></div>
-  </form>
+        <div class="form-group">
+          <label for="kategorie">Kategorie *</label>
+          <select id="kategorie" required>
+            <option>🏠 Wohnen</option>
+            <option>🛒 Lebensmittel & Haushalt</option>
+            <option>🍽️ Essen außer Haus</option>
+            <option>🚗 Transport & Mobilität</option>
+            <option>🛡️ Versicherungen</option>
+            <option>📱 Kommunikation</option>
+            <option>🎯 Abos & Mitgliedschaften</option>
+            <option>🏥 Gesundheit</option>
+            <option>🎮 Freizeit & Unterhaltung</option>
+            <option>📚 Bildung & Studium</option>
+            <option>💻 Technik & Elektronik</option>
+            <option>✈️ Reisen</option>
+            <option>📦 Sonstiges</option>
+          </select>
+        </div>
+
+        <div class="row">
+          <div class="form-group">
+            <label for="datum">Datum *</label>
+            <input id="datum" type="date" required />
+          </div>
+          <div class="form-group">
+            <label for="zahlungsart">Zahlungsart</label>
+            <select id="zahlungsart">
+              <option value="">—</option>
+              <option>💳 Karte</option>
+              <option>💵 Bar</option>
+              <option>🏦 Überweisung</option>
+              <option>💙 PayPal</option>
+              <option>💳 Kreditkarte</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="unterkategorie">Unterkategorie (optional)</label>
+          <input id="unterkategorie" type="text" placeholder="z.B. Supermarkt, Restaurant..." />
+        </div>
+
+        <div class="form-group">
+          <label for="fix_variabel">Fix/Variabel (optional)</label>
+          <select id="fix_variabel">
+            <option value="">—</option>
+            <option>🔒 Fixkosten</option>
+            <option>📊 Variable Kosten</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="notiz">Notiz (optional)</label>
+          <textarea id="notiz" rows="3" placeholder="Zusätzliche Informationen..."></textarea>
+        </div>
+
+        <button type="submit" id="submit-btn">
+          💾 Speichern
+        </button>
+        <div class="msg" id="msg"></div>
+      </form>
+    </div>
+
+    <div id="overview-tab" class="tab-content">
+      <div class="overview-placeholder">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M9 19v-6a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2zm0 0V9a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v10m-6 0a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2m0 0V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-2a2 2 0 0 1-2-2z"/>
+        </svg>
+        <h3>Übersicht</h3>
+        <p>Die Übersicht deiner Buchungen wird hier angezeigt.<br>Diese Funktion kann später implementiert werden.</p>
+      </div>
+    </div>
+  </div>
 
   <script>
-    // 1) HIER eintragen:
+    // API Configuration
     const ENDPOINT_URL = "https://script.google.com/macros/s/AKfycbz6-pp34Img2vm6KFwEEMDtc-_jynFECy7y8pQ-a5TqPrztGM8W8-vXMGoDatfDETAs/exec";
     const API_TOKEN = "f1n4nc3-PWA-2025-7c9eA8xQ2LmRkle";
 
-    // Default date = today
+    // Set default date to today
     document.getElementById("datum").valueAsDate = new Date();
 
-    // Register service worker (PWA offline shell)
+    // Tab navigation
+    const tabs = document.querySelectorAll(".tab");
+    const tabContents = document.querySelectorAll(".tab-content");
+
+    tabs.forEach(tab => {
+      tab.addEventListener("click", () => {
+        const targetTab = tab.dataset.tab;
+        
+        tabs.forEach(t => t.classList.remove("active"));
+        tabContents.forEach(tc => tc.classList.remove("active"));
+        
+        tab.classList.add("active");
+        document.getElementById(`${targetTab}-tab`).classList.add("active");
+      });
+    });
+
+    // Register service worker
     if ("serviceWorker" in navigator) {
-      navigator.serviceWorker.register("sw.js").catch(()=>{});
+      navigator.serviceWorker.register("sw.js").catch(() => {});
     }
 
+    // Form handling
     const msg = document.getElementById("msg");
     const f = document.getElementById("f");
+    const submitBtn = document.getElementById("submit-btn");
+
+    function showMessage(text, type = "info") {
+      msg.textContent = text;
+      msg.className = `msg ${type}`;
+      msg.style.display = "block";
+      
+      if (type === "success") {
+        setTimeout(() => {
+          msg.style.display = "none";
+        }, 3000);
+      }
+    }
+
+    function hideMessage() {
+      msg.style.display = "none";
+      msg.className = "msg";
+    }
 
     f.addEventListener("submit", async (ev) => {
       ev.preventDefault();
-      msg.textContent = "Sende…";
+      hideMessage();
+      
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = '<span class="spinner"></span> Sende...';
 
       const payload = {
         token: API_TOKEN,
@@ -109,7 +445,7 @@
         unterkategorie: document.getElementById("unterkategorie").value,
         zahlungsart: document.getElementById("zahlungsart").value,
         fix_variabel: document.getElementById("fix_variabel").value,
-        datum: document.getElementById("datum").value, // YYYY-MM-DD
+        datum: document.getElementById("datum").value,
         notiz: document.getElementById("notiz").value
       };
 
@@ -119,21 +455,34 @@
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload)
         });
-        const data = await res.json().catch(()=> ({}));
 
-        if (!res.ok || !data.ok) throw new Error(data.error || ("HTTP " + res.status));
+        const data = await res.json().catch(() => ({}));
 
-        msg.textContent = "Gespeichert ✅";
-        // optional: nur Betrag/Notiz resetten
+        if (!res.ok || !data.ok) {
+          throw new Error(data.error || `HTTP ${res.status}`);
+        }
+
+        showMessage("✅ Erfolgreich gespeichert!", "success");
+        
+        // Reset form (keep typ, kategorie, datum)
         document.getElementById("betrag").value = "";
         document.getElementById("unterkategorie").value = "";
+        document.getElementById("zahlungsart").value = "";
+        document.getElementById("fix_variabel").value = "";
         document.getElementById("notiz").value = "";
+        
+        // Focus on betrag for next entry
+        setTimeout(() => {
+          document.getElementById("betrag").focus();
+        }, 100);
+
       } catch (e) {
-        msg.textContent = "Fehler: " + e.message;
+        showMessage(`❌ Fehler: ${e.message}`, "error");
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = "💾 Speichern";
       }
     });
   </script>
 </body>
 </html>
-
-
